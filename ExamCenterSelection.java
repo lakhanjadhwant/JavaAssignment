@@ -6,8 +6,8 @@ import java.util.Scanner;
 class Student {
     String name;
     int age;
-    int rollNo; 
-    String preferences;
+    int rollNo;
+    String[] preferences;
     String allocatedCenter;
 }
 
@@ -25,39 +25,39 @@ class ExamCenter {
 
 public class ExamCenterSelection {
     private static Map<String, ExamCenter> examCenters = new HashMap<>();
+    private static ArrayList<Student> students = new ArrayList<>();
 
     public static void main(String[] args) {
         initializeCenters();
 
         Scanner scanner = new Scanner(System.in);
-        ArrayList<Student> StudentArray = new ArrayList<>(); 
 
         while (true) {
             System.out.println("\nEnter your choice:");
             System.out.println("1. Enter Profile");
             System.out.println("2. Enter Center Choice");
             System.out.println("3. Display Candidate status");
-            System.out.println("4. Display Complete Status");
-            System.out.println("5. Display Center");
+            System.out.println("4. Display Center Information");
+            System.out.println("5. Center Status");
             System.out.println("6. Exit");
 
             int choice = scanner.nextInt();
 
             switch (choice) {
                 case 1:
-                    enterProfile(StudentArray, scanner); // Change here
+                    enterProfile(scanner);
                     break;
                 case 2:
-                    enterCenterChoice(StudentArray, scanner); // Change here
+                    enterCenterChoice(scanner);
                     break;
                 case 3:
-                    displayCandidateStatus(StudentArray); // Change here
+                    displayCandidateStatus(scanner);
                     break;
                 case 4:
-                    displayCompleteStatus(StudentArray); // Change here
+                    displayCenterInformation();
                     break;
                 case 5:
-                    displayCenter();
+                    centerStatus(scanner);
                     break;
                 case 6:
                     System.out.println("Exiting the program. Goodbye!");
@@ -68,48 +68,49 @@ public class ExamCenterSelection {
         }
     }
 
+    // ... (remaining code remains unchanged)
+
+
     private static void initializeCenters() {
         examCenters.put("Ujjain", new ExamCenter("Ujjain", 2));
         examCenters.put("Indore", new ExamCenter("Indore", 2));
         examCenters.put("Dewas", new ExamCenter("Dewas", 3));
+        examCenters.put("Reva", new ExamCenter("Reva", 5));
     }
 
-    private static void enterProfile(ArrayList<Student> StudentArray, Scanner scanner) {
+    private static void enterProfile(Scanner scanner) {
         Student student = new Student();
         System.out.println("Enter your name:");
-        student.name = scanner.next();
+        scanner.nextLine();
+        student.name = scanner.nextLine();
         System.out.println("Enter your age:");
         student.age = scanner.nextInt();
         System.out.println("Enter your roll number:");
         int rollNo = scanner.nextInt();
-    
-        // Check for duplicate roll numbers
-        boolean duplicateRollNo = false;
-        for (Student existingStudent : StudentArray) {
-            if (existingStudent.rollNo == rollNo) {
-                duplicateRollNo = true;
-                break;
-            }
-        }
-    
+
+        boolean duplicateRollNo = students.stream().anyMatch(s -> s.rollNo == rollNo);
+
         if (duplicateRollNo) {
             System.out.println("Student with the same roll number already exists. Profile not added.");
         } else {
             student.rollNo = rollNo;
-            StudentArray.add(student);
+            students.add(student);
             System.out.println("Profile entered successfully!");
         }
     }
-    
 
-    private static void enterCenterChoice(ArrayList<Student> StudentArray, Scanner scanner) { // Change here
-        System.out.println("Enter the roll number to choose the center:");
+    private static void enterCenterChoice(Scanner scanner) {
+        System.out.println("Enter your roll number to choose the center:");
         int rollNo = scanner.nextInt();
         boolean found = false;
 
-        for (Student student : StudentArray) { // Change here
+        for (Student student : students) {
             if (student.rollNo == rollNo) {
-                enterPreferences(student, scanner);
+                if (student.allocatedCenter != null) {
+                    System.out.println("Center already allocated: ");
+                } else {
+                    enterPreferences(student, scanner);
+                }
                 found = true;
                 break;
             }
@@ -121,39 +122,63 @@ public class ExamCenterSelection {
     }
 
     private static void enterPreferences(Student student, Scanner scanner) {
-        boolean validOrder;
-        do {
-            
-            System.out.println("Available Centers are: \na) Ujjain \nb) Indore \nc) Dewas.");
-            System.out.println("Give the preference of the centers, for example, 'a,b,c' for Ujjain, Indore, Dewas.");
-            
-            student.preferences = scanner.nextLine().toLowerCase();
-            validOrder = isValidOrder(student.preferences);
+        int numberOfCenters = examCenters.size();
+        student.preferences = new String[numberOfCenters];
 
-            if (!validOrder) {
-                System.out.println("Please enter a valid order for your preferences.");
-            }
-        } while (!validOrder);
+        for (int i = 0; i < numberOfCenters; i++) {
+            boolean validPreference;
+            do {
+                System.out.println("Enter your " + (i + 1) + " priority:");
+                System.out.println("Available Centers:");
+
+                int j = 1;
+                for (ExamCenter center : examCenters.values()) {
+                    System.out.println("Enter " + j + " for " + center.name);
+                    j++;
+                }
+
+                int choice = scanner.nextInt();
+                String centerName = getCenterNameByChoice(choice);
+
+                validPreference = isValidPreference(student.preferences, centerName);
+
+                if (validPreference) {
+                    student.preferences[i] = centerName;
+                } else {
+                    System.out.println("This center preference is already entered. Please choose a different one.");
+                }
+
+            } while (!validPreference);
+        }
 
         allocateCenter(student);
     }
 
-    private static boolean isValidOrder(String order) {
-        String[] validOrders = {"a,b,c", "a,c,b", "b,a,c", "b,c,a", "c,a,b", "c,b,a"};
-        for (String valid : validOrders) {
-            if (valid.equals(order)) {
-                return true;
+    private static String getCenterNameByChoice(int choice) {
+        int index = 1;
+        for (ExamCenter center : examCenters.values()) {
+            if (index == choice) {
+                return center.name;
+            }
+            index++;
+        }
+        return null;
+    }
+
+    private static boolean isValidPreference(String[] preferences, String centerName) {
+        for (String preference : preferences) {
+            if (preference != null && preference.equals(centerName)) {
+                return false;
             }
         }
-        return false;
+        return true;
     }
 
     private static void allocateCenter(Student student) {
-        for (char preference : student.preferences.toCharArray()) {
-            String center = getCenterByPreference(preference);
-            if (center != null && examCenters.containsKey(center) && examCenters.get(center).filledSeats < examCenters.get(center).totalSeats) {
-                student.allocatedCenter = center;
-                examCenters.get(center).filledSeats++;
+        for (String preference : student.preferences) {
+            if (examCenters.containsKey(preference) && examCenters.get(preference).filledSeats < examCenters.get(preference).totalSeats) {
+                student.allocatedCenter = preference;
+                examCenters.get(preference).filledSeats++;
                 System.out.println("Center allocated successfully: ");
                 return;
             }
@@ -162,28 +187,12 @@ public class ExamCenterSelection {
         System.out.println("No available centers. Unable to allocate.");
     }
 
-    private static String getCenterByPreference(char preference) {
-        switch (preference) {
-            case 'a':
-                return "Ujjain";
-            case 'b':
-                return "Indore";
-            case 'c':
-                return "Dewas";
-            default:
-                return null;
-        }
-    }
-
-    private static void displayCandidateStatus(ArrayList<Student> StudentArray) { // Change here
-        Scanner scanner = new Scanner(System.in);
-
+    private static void displayCandidateStatus(Scanner scanner) {
         System.out.println("Enter your roll number to display candidate status:");
         int rollNo = scanner.nextInt();
         boolean found = false;
 
-
-        for (Student student : StudentArray) { // Change here
+        for (Student student : students) {
             if (student.rollNo == rollNo) {
                 System.out.println("+-------------------+-----------------+-------------+------------------+");
                 System.out.println("| Roll No           | Name            | Age         | Allocated Center |");
@@ -191,7 +200,6 @@ public class ExamCenterSelection {
                 System.out.printf("| %-17d | %-15s | %-11d | %-16s |%n", student.rollNo, student.name, student.age, student.allocatedCenter);
                 System.out.println("+-------------------+-----------------+-------------+------------------+");
                 found = true;
-                
                 break;
             }
         }
@@ -201,19 +209,7 @@ public class ExamCenterSelection {
         }
     }
 
-    private static void displayCompleteStatus(ArrayList<Student> StudentArray) { // Change here
-        System.out.println("+-------------------+-----------------+-------------+----------------------+");
-        System.out.println("| Roll No           | Name            | Age         | Allocated Center     |");
-        System.out.println("+-------------------+-----------------+-------------+----------------------+");
-
-        for (Student student : StudentArray) { // Change here
-            System.out.printf("| %-17d | %-15s | %-11d | %-20s |%n", student.rollNo, student.name, student.age, student.allocatedCenter);
-        }
-
-        System.out.println("+-------------------+-----------------+-------------+----------------------+");
-    }
-
-    private static void displayCenter() {
+    private static void displayCenterInformation() {
         System.out.println("Center-wise Seat Status:");
         System.out.println("+----------------------+--------------+--------------+-----------------+");
         System.out.println("| Center Name          | Total Seats  | Filled Seats | Remaining Seats |");
@@ -225,5 +221,23 @@ public class ExamCenterSelection {
         }
 
         System.out.println("+----------------------+--------------+--------------+-----------------+");
+    }
+
+    private static void centerStatus(Scanner scanner) {
+        System.out.println("Enter the center name to display status:");
+        scanner.nextLine(); // Consume the newline character left by previous nextInt()
+        String centerName = scanner.nextLine();
+
+        if (examCenters.containsKey(centerName)) {
+            ExamCenter center = examCenters.get(centerName);
+            System.out.println("+----------------------+--------------+--------------+-----------------+");
+            System.out.println("| Center Name          | Total Seats  | Filled Seats | Remaining Seats |");
+            System.out.println("+----------------------+--------------+--------------+-----------------+");
+            System.out.printf("| %-20s | %-12d | %-12d | %-15d |%n",
+                    center.name, center.totalSeats, center.filledSeats, center.totalSeats - center.filledSeats);
+            System.out.println("+----------------------+--------------+--------------+-----------------+");
+        } else {
+            System.out.println("Center not found. Please enter a valid center name.");
+        }
     }
 }
