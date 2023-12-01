@@ -68,14 +68,11 @@ public class ExamCenterSelection {
         }
     }
 
-    // ... (remaining code remains unchanged)
-
-
     private static void initializeCenters() {
         examCenters.put("Ujjain", new ExamCenter("Ujjain", 2));
         examCenters.put("Indore", new ExamCenter("Indore", 2));
         examCenters.put("Dewas", new ExamCenter("Dewas", 3));
-        examCenters.put("Reva", new ExamCenter("Reva", 5));
+        
     }
 
     private static void enterProfile(Scanner scanner) {
@@ -216,7 +213,7 @@ public class ExamCenterSelection {
         System.out.println("+----------------------+--------------+--------------+-----------------+");
 
         for (ExamCenter center : examCenters.values()) {
-            System.out.printf("| %-20s | %-12d | %-12d | %-15d |%n",
+            System.out.printf("| %-20s | %-12d | %-12d | %-15d |\n",
                     center.name, center.totalSeats, center.filledSeats, center.totalSeats - center.filledSeats);
         }
 
