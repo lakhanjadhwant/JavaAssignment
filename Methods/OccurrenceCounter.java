@@ -24,7 +24,6 @@ public class OccurrenceCounter {
 
         // Iterate over the stored string until no more occurrences are found
         while ((index = text.indexOf(targetString, index)) != -1) {
-            System.out.println(index);
             count++;
             index += targetString.length();
         }
